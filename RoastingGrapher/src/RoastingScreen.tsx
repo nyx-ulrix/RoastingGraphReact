@@ -325,7 +325,6 @@ function RoastingScreen({ beanName, chargeTemp, unit, onBack }: RoastingScreenPr
 
       <div className="timer-wrapper">
         <h2 className="timer-display">Time: {formatTime(seconds)}</h2>
-        <div className="charge-temp">Charge: {chargeTemp.toFixed(1)}°{unit}</div>
         <div className="temperature-display">
           <div className="current-temp">Current: {currentTemp.toFixed(1)}°{unit}</div>
         </div>
