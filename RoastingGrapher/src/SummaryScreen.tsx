@@ -66,6 +66,58 @@ function SummaryScreen({ beanName, chargeTemp, unit, temperatureData, totalTime,
         <h1>{beanName}</h1>
       </div>
 
+      <div className="graph-wrapper">
+        <div className="graph-container">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={temperatureData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+              <XAxis 
+                dataKey="time" 
+                stroke="#ffffff"
+                tick={{ fill: '#ffffff' }}
+                tickFormatter={formatMinutes}
+                label={{ value: 'Time (minutes)', position: 'insideBottom', offset: -5, fill: '#ffffff' }}
+                interval="preserveStartEnd"
+                allowDecimals={false}
+                ticks={temperatureData.length > 0 ? Array.from(
+                  { length: Math.floor(temperatureData[temperatureData.length - 1].time / 60) + 2 }, 
+                  (_, i) => i * 60
+                ).filter(tick => tick <= temperatureData[temperatureData.length - 1].time + 60) : [0]}
+              />
+              <YAxis 
+                stroke="#ffffff"
+                tick={{ fill: '#ffffff' }}
+                label={{ value: `Temperature (°${unit})`, angle: -90, position: 'insideLeft', fill: '#ffffff' }}
+                domain={[Math.floor(minTemp - 5), Math.ceil(maxTemp + 5)]}
+              />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#000000', border: '1px solid #ffffff', color: '#ffffff' }}
+                labelStyle={{ color: '#ffffff' }}
+                labelFormatter={(value) => `Time: ${formatMinutes(value as number)}`}
+              />
+              <Legend wrapperStyle={{ color: '#ffffff' }} />
+              {firstCrackTime !== null && (
+                <ReferenceLine 
+                  x={firstCrackTime} 
+                  stroke="#ffaa00" 
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  label={{ value: 'First Crack', position: 'top', fill: '#ffaa00', fontSize: 12 }}
+                />
+              )}
+              <Line 
+                type="monotone" 
+                dataKey="temperature" 
+                stroke="#ffffff" 
+                strokeWidth={2}
+                dot={{ fill: '#ffffff', r: 3 }}
+                name={`Temperature (°${unit})`}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       <div className="screen-content">
         <h2>Roast Complete!</h2>
         <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', margin: '10px 0' }}>
@@ -81,69 +133,18 @@ function SummaryScreen({ beanName, chargeTemp, unit, temperatureData, totalTime,
         )}
       </div>
 
-      <div className="graph-container">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={temperatureData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
-            <XAxis 
-              dataKey="time" 
-              stroke="#ffffff"
-              tick={{ fill: '#ffffff' }}
-              tickFormatter={formatMinutes}
-              label={{ value: 'Time (minutes)', position: 'insideBottom', offset: -5, fill: '#ffffff' }}
-              interval="preserveStartEnd"
-              allowDecimals={false}
-              ticks={temperatureData.length > 0 ? Array.from(
-                { length: Math.floor(temperatureData[temperatureData.length - 1].time / 60) + 2 }, 
-                (_, i) => i * 60
-              ).filter(tick => tick <= temperatureData[temperatureData.length - 1].time + 60) : [0]}
-            />
-            <YAxis 
-              stroke="#ffffff"
-              tick={{ fill: '#ffffff' }}
-              label={{ value: `Temperature (°${unit})`, angle: -90, position: 'insideLeft', fill: '#ffffff' }}
-              domain={[Math.floor(minTemp - 5), Math.ceil(maxTemp + 5)]}
-            />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#000000', border: '1px solid #ffffff', color: '#ffffff' }}
-              labelStyle={{ color: '#ffffff' }}
-              labelFormatter={(value) => `Time: ${formatMinutes(value as number)}`}
-            />
-            <Legend wrapperStyle={{ color: '#ffffff' }} />
-            {firstCrackTime !== null && (
-              <ReferenceLine 
-                x={firstCrackTime} 
-                stroke="#ffaa00" 
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                label={{ value: 'First Crack', position: 'top', fill: '#ffaa00', fontSize: 12 }}
-              />
-            )}
-            <Line 
-              type="monotone" 
-              dataKey="temperature" 
-              stroke="#ffffff" 
-              strokeWidth={2}
-              dot={{ fill: '#ffffff', r: 3 }}
-              name={`Temperature (°${unit})`}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
       <div className="center-elements">
-        <h2>Export Your Roast Data</h2>
-        <div className="button-group">
-          <button onClick={handleExportCSV}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '600px', margin: '0 auto' }}>
+          <button onClick={handleExportCSV} style={{ width: '100%' }}>
             Export CSV
           </button>
-          <button onClick={handleExportJSON}>
+          <button onClick={handleExportJSON} style={{ width: '100%' }}>
             Export JSON
           </button>
+          <button onClick={onBackToSetup} style={{ width: '100%' }}>
+            Back to Setup
+          </button>
         </div>
-        <button onClick={onBackToSetup} style={{ marginTop: '20px' }}>
-          Back to Setup
-        </button>
       </div>
     </div>
   );
