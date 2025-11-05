@@ -569,6 +569,15 @@ label {
     width: 49%;
   }
   
+  /* In mobile row layout, put decrease on left and increase on right */
+  .temp-decrease {
+    order: 1;
+  }
+  
+  .temp-increase {
+    order: 2;
+  }
+  
   .session-button {
     width: 100%;
     height: 15vh;

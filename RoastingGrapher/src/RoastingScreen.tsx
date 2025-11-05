@@ -332,11 +332,11 @@ function RoastingScreen({ beanName, chargeTemp, unit, onBack }: RoastingScreenPr
 
       <div className="controls-wrapper">
         <div className="temp-controls-container">
-          <button onClick={handleDecreaseTemp} className="temp-control-button">
-            - Decrease
-          </button>
-          <button onClick={handleIncreaseTemp} className="temp-control-button">
+          <button onClick={handleIncreaseTemp} className="temp-control-button temp-increase">
             + Increase
+          </button>
+          <button onClick={handleDecreaseTemp} className="temp-control-button temp-decrease">
+            - Decrease
           </button>
         </div>
         <button 
