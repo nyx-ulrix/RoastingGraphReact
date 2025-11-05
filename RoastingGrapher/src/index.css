@@ -1,69 +1,600 @@
+/* ============================================
+   CSS Variables for consistent theming
+   ============================================ */
 :root {
-  font-family: 'Times New Roman', Times, serif;
-  line-height: 1.5;
-  font-weight: 800;
+  /* Colors */
+  --color-bg-primary: #000000;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cccccc;
+  --color-button-bg: #ffffff;
+  --color-button-text: #000000;
+  --color-border: #ffffff;
+  
+  /* Typography */
+  --font-family: 'Times New Roman', Times, serif;
+  --font-weight-normal: 500;
+  --font-weight-bold: 800;
+  --font-size-base: 1em;
+  --font-size-large: 3.2em;
+  --line-height-base: 1.5;
+  --line-height-heading: 1.1;
+  
+  /* Spacing */
+  --spacing-xs: 5px;
+  --spacing-sm: 8px;
+  --spacing-md: 10px;
+  --spacing-lg: 20px;
+  --spacing-xl: 30px;
+  --padding-input: 8px;
+  --padding-button: 0.6em 1.2em;
+  --padding-button-large: 12px;
+  --padding-container: 20px;
+  
+  /* Layout */
+  --border-radius-sm: 5px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 10px;
+  --border-width: 1px;
+  --border-width-thick: 2px;
+  
+  /* Transitions */
+  --transition-fast: 0.25s;
+  --transition-normal: 0.3s;
+  
+  /* Other */
+  --opacity-hover: 0.9;
+  --opacity-disabled: 0.5;
+}
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #000000;
+/* ============================================
+   Base Styles
+   ============================================ */
+* {
+  box-sizing: border-box;
+}
 
+:root {
+  font-family: var(--font-family);
+  line-height: var(--line-height-base);
+  font-weight: var(--font-weight-bold);
+  color-scheme: dark;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizeSpeed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
-  margin: auto;
+  margin: 0;
+  padding: 0;
   display: flex;
   text-align: center;
-  min-width: 100vw;
-  min-height: 100vh;
-} 
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  overflow: hidden;
+}
+
+/* ============================================
+   Typography
+   ============================================ */
+h1, h2, h3, h4, h5, h6, p {
+  color: var(--color-text-primary);
+  margin: 0;
+}
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: var(--font-size-large);
+  line-height: var(--line-height-heading);
 }
 
+h2 {
+  margin: var(--spacing-md) 0;
+}
+
+/* ============================================
+   Links
+   ============================================ */
+a {
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-text-secondary);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
+  border-radius: var(--border-radius-md);
+  border: var(--border-width) solid #ffffff;
+  padding: 8px 16px;
+  font-size: clamp(0.8em, 2vw, 1em);
+  font-weight: var(--font-weight-normal);
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #000000;
+  color: #ffffff;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: opacity var(--transition-fast);
+  white-space: nowrap;
 }
-button:hover {
-  border-color: #646cff;
+
+button:hover:not(:disabled) {
+  opacity: var(--opacity-hover);
 }
+
+button:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* ============================================
+   Form Elements
+   ============================================ */
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: var(--padding-input);
+  font-size: 16px;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: none;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--color-text-secondary);
+}
+
+input[type="text"]:disabled,
+input[type="number"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input[type="radio"] {
+  cursor: pointer;
+}
+
+label {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+/* ============================================
+   Layout Utilities
+   ============================================ */
+.full-width {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.center-elements {
+  text-align: center;
+  padding: 10px;
+}
+
+.flex-container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   App Container
+   ============================================ */
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* ============================================
+   Screen Layout
+   ============================================ */
+.screen-container {
+  padding: 5px 10px;
+  width: 100%;
+  height: 100vh;
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.screen-header {
+  margin-bottom: 1vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 10px;
+  height: 4vh;
+}
+
+.screen-header h1 {
+  font-size: clamp(0.9em, 2.2vw, 1.6em);
+  margin: 0;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 90%;
+  max-width: 400px;
+  padding: 20px;
+  border: var(--border-width-thick) solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-primary);
+  box-sizing: border-box;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.form-label-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+.form-radio-group {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* Timer button states */
+.timer-button-start {
+  background-color: #000000;
+  color: #ffffff;
+  border: var(--border-width) solid #ffffff;
+  min-width: 120px;
+  padding: 10px 20px;
+}
+
+.timer-button-stop {
+  background-color: #000000;
+  color: #ffffff;
+  border: var(--border-width) solid #ffffff;
+  min-width: 120px;
+  padding: 10px 20px;
+}
+
+.graph-wrapper {
+  width: 100%;
+  height: 35vh;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin-bottom: 2vh;
+}
+
+.graph-container {
+  background-color: var(--color-bg-primary);
+  padding: 8px;
+  border-radius: var(--border-radius-lg);
+  border: var(--border-width) solid var(--color-border);
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.dtr-section {
+  width: 100%;
+  flex-shrink: 0;
+  margin-bottom: 1.5vh;
+  padding: 0 2vw;
+  box-sizing: border-box;
+}
+
+.dtr-label {
+  font-size: 1.8vh;
+  font-weight: var(--font-weight-bold);
+  color: #ffffff;
+  margin-bottom: 0.5vh;
+  text-align: center;
+}
+
+.dtr-progress-container {
+  width: 100%;
+  height: 4vh;
+  background-color: #333333;
+  border-radius: 2vh;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #ffffff;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.dtr-progress-bar {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+  border-radius: 2vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.dtr-progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-size: 2.5vh;
+  font-weight: var(--font-weight-bold);
+  z-index: 1;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.timer-wrapper {
+  width: 100%;
+  height: 8vh;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin-bottom: 1.5vh;
+  padding: 0 2vw;
+}
+
+.temperature-display {
+  text-align: left;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+}
+
+.current-temp {
+  font-size: 5vh;
+  line-height: 1;
+}
+
+.charge-temp {
+  font-size: 1vh;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.timer-display {
+  font-size: 5vh;
+  margin: 0;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.controls-wrapper {
+  width: 100%;
+  height: 30vh;
+  display: flex;
+  gap: 2%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.temp-controls-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2%;
+  width: 49%;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.temp-control-button {
+  height: 49%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1em, 2.5vw, 1.5em);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--border-radius-md);
+  border: var(--border-width) solid #ffffff;
+  background-color: #000000;
+  color: #ffffff;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.temp-control-button:hover:not(:disabled) {
+  opacity: var(--opacity-hover);
+}
+
+.session-button {
+  width: 49%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1.5em, 3vw, 2.5em);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+  background-color: #000000;
+  color: #ffffff;
+  border: var(--border-width) solid #ffffff;
+}
+
+.session-button-start {
+  background-color: #000000;
+  color: #00ff00;
+  border: var(--border-width) solid #00ff00;
+}
+
+.session-button-firstcrack {
+  background-color: #000000;
+  color: #ffaa00;
+  border: var(--border-width) solid #ffaa00;
+}
+
+.session-button-stop {
+  background-color: #000000;
+  color: #ff0000;
+  border: var(--border-width) solid #ff0000;
+}
+
+.session-button:hover:not(:disabled) {
+  opacity: var(--opacity-hover);
+}
+
+/* ============================================
+   Media Queries
+   ============================================ */
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    /* Maintain dark theme regardless of system preference */
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-primary);
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+  
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
   }
 }
 
+@media (max-width: 768px) {
+  .screen-header h1 {
+    font-size: 1.3em;
+  }
+  
+  .graph-wrapper {
+    height: 30vh;
+  }
+  
+  .current-temp,
+  .timer-display {
+    font-size: 4vh;
+  }
+  
+  .button-group {
+    gap: 8px;
+  }
+  
+  button {
+    padding: 8px 12px;
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 450px) {
+  .controls-wrapper {
+    flex-direction: column;
+    height: auto;
+    gap: 1vh;
+  }
+  
+  .temp-controls-container {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    gap: 2%;
+  }
+  
+  .temp-control-button {
+    height: 12vh;
+    width: 49%;
+  }
+  
+  .session-button {
+    width: 100%;
+    height: 15vh;
+  }
+  
+  .graph-wrapper {
+    height: 25vh;
+  }
+  
+  .current-temp,
+  .timer-display {
+    font-size: 3.5vh;
+  }
+}
+
+@media (max-height: 700px) {
+  .screen-header h1 {
+    font-size: 1.2em;
+  }
+  
+  .graph-wrapper {
+    height: 28vh;
+  }
+  
+  .dtr-progress-container {
+    height: 3vh;
+  }
+  
+  .dtr-progress-text {
+    font-size: 2vh;
+  }
+  
+  .controls-wrapper {
+    height: 28vh;
+  }
+  
+  .button-group {
+    margin-top: 5px;
+    gap: 5px;
+  }
+  
+  button {
+    padding: 6px 10px;
+    font-size: 0.85em;
+  }
+}
