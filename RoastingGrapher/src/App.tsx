@@ -1,12 +1,13 @@
 /**
  * Main App Component
  * 
- * Manages navigation between the setup screen and the roasting session screen.
- * Handles session state (bean name, charge temperature, and temperature unit).
+ * Manages navigation between setup, roasting, and summary screens.
+ * Handles session state including bean name, temperatures, first crack time, and DTR data.
  */
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import MainScreen from './MainScreen'
 import RoastingScreen from './RoastingScreen'
+import SummaryScreen from './SummaryScreen'
 
 /**
  * Session data structure
@@ -17,37 +18,85 @@ interface SessionData {
   unit: 'C' | 'F';
 }
 
+/**
+ * Temperature data point structure
+ */
+interface TemperatureDataPoint {
+  time: number;
+  temperature: number;
+}
+
+/**
+ * Summary data structure with first crack time for DTR calculation
+ */
+interface SummaryData {
+  beanName: string;
+  chargeTemp: number;
+  unit: 'C' | 'F';
+  temperatureData: TemperatureDataPoint[];
+  totalTime: number;
+  firstCrackTime: number | null;
+}
+
 function App() {
   // Current roasting session data, null when on setup screen
   const [session, setSession] = useState<SessionData | null>(null);
+  // Summary data for completed session
+  const [summary, setSummary] = useState<SummaryData | null>(null);
 
   /**
-   * Handles starting a new roasting session
-   * @param beanName - Name of the coffee beans being roasted
-   * @param chargeTemp - Initial charge temperature
-   * @param unit - Temperature unit ('C' for Celsius or 'F' for Fahrenheit)
+   * Starts a new roasting session with provided parameters
    */
-  const handleStartSession = (beanName: string, chargeTemp: number, unit: 'C' | 'F') => {
+  const handleStartSession = useCallback((beanName: string, chargeTemp: number, unit: 'C' | 'F') => {
     setSession({ beanName, chargeTemp, unit });
-  };
+    setSummary(null);
+  }, []);
 
   /**
-   * Handles returning to the setup screen
-   * Clears the current session data
+   * Ends the roasting session and navigates to summary screen
    */
-  const handleBack = () => {
+  const handleEndSession = useCallback((data: { temperatureData: TemperatureDataPoint[], totalTime: number, firstCrackTime: number | null }) => {
+    if (session) {
+      setSummary({
+        beanName: session.beanName,
+        chargeTemp: session.chargeTemp,
+        unit: session.unit,
+        temperatureData: data.temperatureData,
+        totalTime: data.totalTime,
+        firstCrackTime: data.firstCrackTime
+      });
+      setSession(null);
+    }
+  }, [session]);
+
+  /**
+   * Returns to the setup screen and clears all data
+   */
+  const handleBackToSetup = useCallback(() => {
     setSession(null);
-  };
+    setSummary(null);
+  }, []);
 
   return (
     <div className='full-width center-elements'>
-      {session ? (
+      {summary ? (
+        // Show summary screen when session is complete
+        <SummaryScreen
+          beanName={summary.beanName}
+          chargeTemp={summary.chargeTemp}
+          unit={summary.unit}
+          temperatureData={summary.temperatureData}
+          totalTime={summary.totalTime}
+          firstCrackTime={summary.firstCrackTime}
+          onBackToSetup={handleBackToSetup}
+        />
+      ) : session ? (
         // Show roasting screen when a session is active
         <RoastingScreen
           beanName={session.beanName}
           chargeTemp={session.chargeTemp}
           unit={session.unit}
-          onBack={handleBack}
+          onBack={handleEndSession}
         />
       ) : (
         // Show setup screen when no session is active

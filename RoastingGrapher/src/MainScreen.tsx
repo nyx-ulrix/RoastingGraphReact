@@ -6,36 +6,22 @@
  * - Charge temperature (initial temperature when beans are added)
  * - Temperature unit (Celsius or Fahrenheit)
  */
-import { useState, useCallback } from 'react';
+import { useState, memo } from 'react';
 
 interface MainScreenProps {
   /** Callback function called when user submits the form to start a roasting session */
   onStart: (beanName: string, chargeTemp: number, unit: 'C' | 'F') => void;
 }
 
-function MainScreen({ onStart }: MainScreenProps) {
+const MainScreen = memo(function MainScreen({ onStart }: MainScreenProps) {
   // Form state
   const [beanName, setBeanName] = useState('');
   const [chargeTemp, setChargeTemp] = useState('');
   const [unit, setUnit] = useState<'C' | 'F'>('C');
 
-  // Memoize handlers to prevent unnecessary re-renders and ensure stable references
-  const handleBeanNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setBeanName(e.target.value);
-  }, []);
-
-  const handleChargeTempChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setChargeTemp(e.target.value);
-  }, []);
-
-  const handleUnitChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setUnit(e.target.value as 'C' | 'F');
-  }, []);
-
   /**
    * Handles form submission
    * Validates input and starts the roasting session if valid
-   * @param e - Form submit event
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +51,7 @@ function MainScreen({ onStart }: MainScreenProps) {
             id="beanName"
             type="text"
             value={beanName}
-            onChange={handleBeanNameChange}
+            onChange={(e) => setBeanName(e.target.value)}
             placeholder="Enter bean name"
             autoComplete="off"
             required
@@ -80,7 +66,7 @@ function MainScreen({ onStart }: MainScreenProps) {
             id="chargeTemp"
             type="number"
             value={chargeTemp}
-            onChange={handleChargeTempChange}
+            onChange={(e) => setChargeTemp(e.target.value)}
             placeholder="Enter charge temperature"
             autoComplete="off"
             required
@@ -99,7 +85,7 @@ function MainScreen({ onStart }: MainScreenProps) {
                 type="radio"
                 value="C"
                 checked={unit === 'C'}
-                onChange={handleUnitChange}
+                onChange={(e) => setUnit(e.target.value as 'C' | 'F')}
               />
               <span>Celsius (°C)</span>
             </label>
@@ -108,20 +94,19 @@ function MainScreen({ onStart }: MainScreenProps) {
                 type="radio"
                 value="F"
                 checked={unit === 'F'}
-                onChange={handleUnitChange}
+                onChange={(e) => setUnit(e.target.value as 'C' | 'F')}
               />
               <span>Fahrenheit (°F)</span>
             </label>
           </div>
         </div>
 
-        <button type="submit" className="button-large">
+        <button type="submit">
           Start Roasting Session
         </button>
       </form>
     </div>
   );
-}
+});
 
 export default MainScreen;
-

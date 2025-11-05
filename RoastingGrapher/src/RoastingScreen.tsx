@@ -4,11 +4,13 @@
  * Main screen during an active roasting session. Displays:
  * - Real-time temperature graph (temperature vs. time)
  * - Manual temperature control buttons (increase/decrease)
- * - Timer with start/stop/lap functionality
+ * - Timer with start/stop/first crack functionality
  * - Current and charge temperature display
+ * - Development Time Ratio (DTR) progress bar
  */
 import { useState, useEffect, useRef } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { calculateDTR, getDTRColor } from './utils/dtrCalculations';
 
 /**
  * Data point structure for temperature logging
@@ -20,6 +22,22 @@ interface TemperatureDataPoint {
   temperature: number;
 }
 
+/**
+ * Session state structure for localStorage persistence
+ */
+interface SessionState {
+  beanName: string;
+  chargeTemp: number;
+  unit: 'C' | 'F';
+  temperatureData: TemperatureDataPoint[];
+  currentTemp: number;
+  seconds: number;
+  isRunning: boolean;
+  startTime: number | null;
+  firstCrackTime: number | null;
+  roastStage: 'ready' | 'started' | 'firstCrack' | 'ended';
+}
+
 interface RoastingScreenProps {
   /** Name of the coffee beans being roasted */
   beanName: string;
@@ -27,14 +45,17 @@ interface RoastingScreenProps {
   chargeTemp: number;
   /** Temperature unit ('C' for Celsius, 'F' for Fahrenheit) */
   unit: 'C' | 'F';
-  /** Callback function to return to setup screen */
-  onBack: () => void;
+  /** Callback function to end session and show summary */
+  onBack: (data: { temperatureData: TemperatureDataPoint[], totalTime: number, firstCrackTime: number | null }) => void;
 }
 
 function RoastingScreen({ beanName, chargeTemp, unit, onBack }: RoastingScreenProps) {
-  // Timer state
+  // Timer state - using Date.now() for accuracy
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [firstCrackTime, setFirstCrackTime] = useState<number | null>(null);
+  const [roastStage, setRoastStage] = useState<'ready' | 'started' | 'firstCrack' | 'ended'>('ready');
   
   // Temperature state and data logging
   const [temperatureData, setTemperatureData] = useState<TemperatureDataPoint[]>([
@@ -43,162 +64,170 @@ function RoastingScreen({ beanName, chargeTemp, unit, onBack }: RoastingScreenPr
   const [currentTemp, setCurrentTemp] = useState(chargeTemp);
   
   // Refs for managing intervals and accessing current values in callbacks
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
   const currentTempRef = useRef(currentTemp);
-  const secondsRef = useRef(0);
   const isInitialMount = useRef(true);
+  const sessionKeyRef = useRef(`roasting_session_${beanName}_${Date.now()}`);
 
   /**
-   * Reset state when chargeTemp prop changes (e.g., new session started)
-   * This ensures state is properly initialized when props change
-   * Note: In normal flow, component unmounts/remounts, but this is defensive
+   * Load saved session from localStorage on mount and auto-start timer
    */
   useEffect(() => {
-    // Skip on initial mount (state already initialized correctly)
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
+    const savedSession = localStorage.getItem(sessionKeyRef.current);
+    if (savedSession) {
+      try {
+        const state: SessionState = JSON.parse(savedSession);
+        // Restore state from localStorage
+        setTemperatureData(state.temperatureData);
+        setCurrentTemp(state.currentTemp);
+        setSeconds(state.seconds);
+        setFirstCrackTime(state.firstCrackTime);
+        setRoastStage(state.roastStage);
+        // Don't automatically resume timer, let user restart
+        setIsRunning(false);
+        setStartTime(null);
+      } catch (error) {
+        console.error('Failed to load saved session:', error);
+      }
+    } else {
+      // Auto-start timer for new sessions
+      setStartTime(Date.now());
+      setIsRunning(true);
+      setRoastStage('started');
     }
-    
-    // Reset state if chargeTemp changes after initial mount
-    setCurrentTemp(chargeTemp);
-    setTemperatureData([{ time: 0, temperature: chargeTemp }]);
-    setSeconds(0);
-    setIsRunning(false);
-    // Clear any running interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, [chargeTemp]);
+    isInitialMount.current = false;
+  }, []); // Only run once on mount
 
   /**
-   * Keep refs in sync with state
-   * This allows us to access the latest values in interval callbacks
-   * without causing the interval to restart when values change
+   * Save session to localStorage whenever state changes
+   */
+  useEffect(() => {
+    if (!isInitialMount.current) {
+      const state: SessionState = {
+        beanName,
+        chargeTemp,
+        unit,
+        temperatureData,
+        currentTemp,
+        seconds,
+        isRunning: false, // Never save running state
+        startTime: null,
+        firstCrackTime,
+        roastStage,
+      };
+      localStorage.setItem(sessionKeyRef.current, JSON.stringify(state));
+    }
+  }, [beanName, chargeTemp, unit, temperatureData, currentTemp, seconds, firstCrackTime, roastStage]);
+
+  /**
+   * Cleanup effect: Clear interval timer when component unmounts
+   */
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  /**
+   * Sync temperature ref with state for access in interval callback
    */
   useEffect(() => {
     currentTempRef.current = currentTemp;
   }, [currentTemp]);
 
-  useEffect(() => {
-    secondsRef.current = seconds;
-  }, [seconds]);
-
   /**
-   * Timer effect: Manages the countdown timer and temperature logging
-   * When timer is running, logs temperature data every second
+   * Timer effect: Manages timer and temperature logging with Date.now() for accuracy
+   * Updates every 100ms for smooth display, logs data points every second
    */
   useEffect(() => {
-    if (isRunning) {
-      // Start interval that runs every second
-      intervalRef.current = setInterval(() => {
-        setSeconds((prevSeconds) => {
-          const newSeconds = prevSeconds + 1;
-          
-          // Log current temperature data point every second when timer is running
-          // Uses ref to get the latest temperature value without causing re-renders
-          // Limit array size to prevent memory issues (keep last 3600 points = 1 hour at 1 second intervals)
-          setTemperatureData((prev) => {
-            const newData = [...prev, { time: newSeconds, temperature: currentTempRef.current }];
-            // Keep only the last 3600 data points to prevent unbounded memory growth
+    if (isRunning && startTime !== null) {
+      intervalRef.current = window.setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        setSeconds(elapsed);
+        
+        // Log temperature data point only when elapsed time increases (prevents duplicates)
+        setTemperatureData((prev) => {
+          const lastTime = prev.length > 0 ? prev[prev.length - 1].time : -1;
+          if (elapsed > lastTime) {
+            const newData = [...prev, { time: elapsed, temperature: currentTempRef.current }];
+            // Keep last 3600 points (1 hour at 1 second intervals) to prevent memory issues
             return newData.length > 3600 ? newData.slice(-3600) : newData;
-          });
-          return newSeconds;
+          }
+          return prev;
         });
-      }, 1000);
+      }, 100);
     } else {
-      // Stop interval when timer is not running
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     }
 
-    // Cleanup: clear interval on unmount or when isRunning changes
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isRunning]);
+  }, [isRunning, startTime]);
 
   /**
    * Starts the timer and begins logging temperature data
    */
   const handleStart = () => {
-    setIsRunning(true);
+    if (!isRunning && roastStage === 'ready') {
+      setStartTime(Date.now() - seconds * 1000);
+      setIsRunning(true);
+      setRoastStage('started');
+    }
   };
 
   /**
-   * Stops the timer and pauses temperature logging
+   * Marks the first crack time for DTR calculation
    */
-  const handleStop = () => {
-    setIsRunning(false);
+  const handleFirstCrack = () => {
+    if (roastStage === 'started') {
+      setFirstCrackTime(seconds);
+      setRoastStage('firstCrack');
+    }
   };
 
   /**
-   * Logs a lap time with current temperature to console
-   * Can be extended to display lap times in the UI
-   */
-  const handleLap = () => {
-    console.log(`Lap time: ${seconds} seconds, Temperature: ${currentTemp.toFixed(1)}°${unit}`);
-  };
-
-  /**
-   * Increases the current temperature by 1°C or 1.8°F
-   * If timer is running, immediately logs the temperature change to the graph
+   * Increases current temperature by 1°C or 1.8°F
    */
   const handleIncreaseTemp = () => {
-    // Temperature increment: 1°C ≈ 1.8°F
     const increment = unit === 'C' ? 1 : 1.8;
-    
-    setCurrentTemp((prevTemp) => {
-      const newTemp = prevTemp + increment;
-      
-      // If timer is running, log the temperature change immediately
-      // Use secondsRef to get the current value, not stale closure value
-      if (isRunning) {
-        setTemperatureData((prev) => {
-          const newData = [...prev, { time: secondsRef.current, temperature: newTemp }];
-          // Keep only the last 3600 data points to prevent unbounded memory growth
-          return newData.length > 3600 ? newData.slice(-3600) : newData;
-        });
-      }
-      return newTemp;
-    });
+    setCurrentTemp((prevTemp) => prevTemp + increment);
   };
 
   /**
-   * Decreases the current temperature by 1°C or 1.8°F
-   * Prevents temperature from going below 0
-   * If timer is running, immediately logs the temperature change to the graph
+   * Decreases current temperature by 1°C or 1.8°F (minimum 0)
    */
   const handleDecreaseTemp = () => {
-    // Temperature decrement: 1°C ≈ 1.8°F
     const decrement = unit === 'C' ? 1 : 1.8;
-    
-    setCurrentTemp((prevTemp) => {
-      // Prevent negative temperatures
-      const newTemp = Math.max(0, prevTemp - decrement);
-      
-      // If timer is running, log the temperature change immediately
-      // Use secondsRef to get the current value, not stale closure value
-      if (isRunning) {
-        setTemperatureData((prev) => {
-          const newData = [...prev, { time: secondsRef.current, temperature: newTemp }];
-          // Keep only the last 3600 data points to prevent unbounded memory growth
-          return newData.length > 3600 ? newData.slice(-3600) : newData;
-        });
-      }
-      return newTemp;
-    });
+    setCurrentTemp((prevTemp) => Math.max(0, prevTemp - decrement));
   };
+
+
+  /**
+   * Ends the session and navigates to summary screen
+   */
+  const handleBackWithConfirmation = () => {
+    // Stop the timer
+    setIsRunning(false);
+    setRoastStage('ended');
+    
+    // Clear localStorage for this session
+    localStorage.removeItem(sessionKeyRef.current);
+    
+    // Pass all session data to parent
+    onBack({ temperatureData, totalTime: seconds, firstCrackTime });
+  };
+
 
   /**
    * Formats seconds into MM:SS format
-   * @param totalSeconds - Total number of seconds
-   * @returns Formatted time string (e.g., "05:30" for 330 seconds)
    */
   const formatTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -206,94 +235,127 @@ function RoastingScreen({ beanName, chargeTemp, unit, onBack }: RoastingScreenPr
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  /**
+   * Formats seconds to minutes for X-axis display (minutes only)
+   */
+  const formatMinutes = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    return `${mins}m`;
+  };
+
+  /**
+   * Calculate the minimum and maximum temperatures from data
+   */
+  const minTemp = Math.min(...temperatureData.map(d => d.temperature));
+  const maxTemp = Math.max(...temperatureData.map(d => d.temperature));
+
   return (
     <div className="screen-container">
       <div className="screen-header">
-        <h1>{beanName} - Roasting Session</h1>
-        <button onClick={onBack}>
-          Back to Setup
-        </button>
+        <h1>{beanName}</h1>
       </div>
 
-      <div className="screen-content">
-        <h2>
-          Current Temperature: {currentTemp.toFixed(1)}°{unit}
-        </h2>
-        <p>
-          Charge Temperature: {chargeTemp.toFixed(1)}°{unit}
-        </p>
-        <div className="button-group">
-          <button
-            onClick={handleDecreaseTemp}
-            className="button-large"
-          >
-            - Decrease
-          </button>
-          <button
-            onClick={handleIncreaseTemp}
-            className="button-large"
-          >
-            + Increase
-          </button>
+      <div className="graph-wrapper">
+        <div className="graph-container">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={temperatureData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
+              <XAxis 
+                dataKey="time" 
+                stroke="#ffffff"
+                tick={{ fill: '#ffffff' }}
+                tickFormatter={formatMinutes}
+                label={{ value: 'Time (minutes)', position: 'insideBottom', offset: -5, fill: '#ffffff' }}
+                interval="preserveStartEnd"
+                allowDecimals={false}
+                ticks={temperatureData.length > 0 ? Array.from(
+                  { length: Math.floor(temperatureData[temperatureData.length - 1].time / 60) + 2 }, 
+                  (_, i) => i * 60
+                ).filter(tick => tick <= temperatureData[temperatureData.length - 1].time + 60) : [0]}
+              />
+              <YAxis 
+                stroke="#ffffff"
+                tick={{ fill: '#ffffff' }}
+                label={{ value: `Temperature (°${unit})`, angle: -90, position: 'insideLeft', fill: '#ffffff' }}
+                domain={[Math.floor(minTemp - 5), Math.ceil(maxTemp + 5)]}
+              />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#000000', border: '1px solid #ffffff', color: '#ffffff' }}
+                labelStyle={{ color: '#ffffff' }}
+                labelFormatter={(value) => `Time: ${formatMinutes(value as number)}`}
+              />
+              <Legend wrapperStyle={{ color: '#ffffff' }} />
+              {firstCrackTime !== null && (
+                <ReferenceLine 
+                  x={firstCrackTime} 
+                  stroke="#ffaa00" 
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  label={{ value: 'First Crack', position: 'top', fill: '#ffaa00', fontSize: 12 }}
+                />
+              )}
+              <Line 
+                type="monotone" 
+                dataKey="temperature" 
+                stroke="#ffffff" 
+                strokeWidth={2}
+                dot={{ fill: '#ffffff', r: 3 }}
+                name={`Temperature (°${unit})`}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="graph-container">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={temperatureData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
-            <XAxis 
-              dataKey="time" 
-              stroke="#ffffff"
-              tick={{ fill: '#ffffff' }}
-              label={{ value: 'Time (seconds)', position: 'insideBottom', offset: -5, fill: '#ffffff' }}
-            />
-            <YAxis 
-              stroke="#ffffff"
-              tick={{ fill: '#ffffff' }}
-              label={{ value: `Temperature (°${unit})`, angle: -90, position: 'insideLeft', fill: '#ffffff' }}
-            />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#000000', border: '1px solid #ffffff', color: '#ffffff' }}
-              labelStyle={{ color: '#ffffff' }}
-            />
-            <Legend wrapperStyle={{ color: '#ffffff' }} />
-            <Line 
-              type="monotone" 
-              dataKey="temperature" 
-              stroke="#ffffff" 
-              strokeWidth={2}
-              dot={{ fill: '#ffffff', r: 3 }}
-              name={`Temperature (°${unit})`}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="dtr-section">
+        <div className="dtr-label">DTR</div>
+        <div className="dtr-progress-container">
+          <div 
+            className="dtr-progress-bar" 
+            style={{ 
+              width: `${calculateDTR(firstCrackTime, seconds)}%`,
+              backgroundColor: getDTRColor(calculateDTR(firstCrackTime, seconds))
+            }}
+          />
+          <div className="dtr-progress-text">
+            {calculateDTR(firstCrackTime, seconds).toFixed(1)}%
+          </div>
+        </div>
       </div>
 
-      <div className="center-elements">
-        <h2>Time: {formatTime(seconds)}</h2>
+      <div className="timer-wrapper">
+        <div className="temperature-display">
+          <div className="current-temp">Current: {currentTemp.toFixed(1)}°{unit}</div>
+          <div className="charge-temp">Charge: {chargeTemp.toFixed(1)}°{unit}</div>
+        </div>
+        <h2 className="timer-display">Time: {formatTime(seconds)}</h2>
+      </div>
 
-        <div className="timer-controls">
-          <button
-            className="round-button"
-            onClick={handleStart}
-            disabled={isRunning}
-          >
-            Start
+      <div className="controls-wrapper">
+        <button 
+          onClick={() => {
+            if (roastStage === 'ready') {
+              handleStart();
+            } else if (roastStage === 'started') {
+              handleFirstCrack();
+            } else if (roastStage === 'firstCrack') {
+              handleBackWithConfirmation();
+            }
+          }}
+          className={
+            roastStage === 'ready' ? 'session-button session-button-start' :
+            roastStage === 'started' ? 'session-button session-button-firstcrack' :
+            'session-button session-button-stop'
+          }
+        >
+          {roastStage === 'ready' ? 'Start' : roastStage === 'started' ? 'First Crack' : 'End'}
+        </button>
+        <div className="temp-controls-container">
+          <button onClick={handleIncreaseTemp} className="temp-control-button">
+            + Increase
           </button>
-          <button
-            className="round-button"
-            onClick={handleStop}
-            disabled={!isRunning}
-          >
-            Stop
-          </button>
-          <button
-            className="round-button"
-            onClick={handleLap}
-            disabled={!isRunning}
-          >
-            Lap
+          <button onClick={handleDecreaseTemp} className="temp-control-button">
+            - Decrease
           </button>
         </div>
       </div>
@@ -302,4 +364,3 @@ function RoastingScreen({ beanName, chargeTemp, unit, onBack }: RoastingScreenPr
 }
 
 export default RoastingScreen;
-

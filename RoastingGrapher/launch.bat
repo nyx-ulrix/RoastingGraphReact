@@ -1,11 +1,18 @@
 @echo off
 setlocal enabledelayedexpansion
-REM Batch file to launch Roasting Graph React project
-REM Checks for Node.js, npm, and dependencies before launching
-REM Stops any running instances before launching
+REM ========================================
+REM Coffee Roasting Grapher - Launch Script
+REM ========================================
+REM This script will:
+REM - Verify Node.js and npm are installed
+REM - Kill all Node.js processes
+REM - Stop any existing instances on port 5173
+REM - Install/update dependencies if needed
+REM - Start the Vite development server with clean cache
+REM ========================================
 
 echo ========================================
-echo Roasting Graph React - Launch Script
+echo Coffee Roasting Grapher v1.1.0
 echo ========================================
 echo.
 
@@ -34,46 +41,49 @@ echo [INFO] npm version:
 npm --version
 echo.
 
-REM Change to the RoastingGrapher directory
+REM Verify we're in the correct directory
 cd /d "%~dp0"
 if not exist "package.json" (
-    echo [ERROR] package.json not found. Please run this script from the RoastingGrapher directory.
+    echo [ERROR] package.json not found in current directory
+    echo Please ensure this script is in the RoastingGrapher folder
     pause
     exit /b 1
 )
 
-REM ========================================
-REM Stop any running instances
-REM ========================================
-echo [INFO] Checking for running instances on port 5173...
-echo.
+echo ========================================
+echo Stopping Existing Processes
+echo ========================================
 
-REM Find and kill processes using port 5173 (Vite default port)
+REM Kill all Node.js processes to ensure clean start
+echo [INFO] Stopping all Node.js processes...
+taskkill /F /IM node.exe >nul 2>&1
+if !ERRORLEVEL! EQU 0 (
+    echo [SUCCESS] Stopped all Node.js processes
+) else (
+    echo [INFO] No Node.js processes were running
+)
+
+REM Additional check for processes on port 5173
 set "PORT_FOUND=0"
 for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":5173" ^| findstr "LISTENING"') do (
     set "PORT_FOUND=1"
     set "PID=%%a"
-    echo [INFO] Found process using port 5173 (PID: !PID!)
+    echo [INFO] Found process on port 5173 (PID: !PID!)
     taskkill /F /PID !PID! >nul 2>&1
-    if !ERRORLEVEL! EQU 0 (
-        echo [SUCCESS] Stopped process on port 5173
-    ) else (
-        echo [WARNING] Could not stop process !PID! (may require admin rights or process already stopped)
-    )
 )
 
-if !PORT_FOUND! EQU 0 (
-    echo [INFO] No running instances found on port 5173
-) else (
-    REM Wait a moment for ports to be released
-    echo [INFO] Waiting for ports to be released...
+if !PORT_FOUND! EQU 1 (
+    echo [INFO] Waiting for port to be released...
     timeout /t 2 /nobreak >nul
 )
 echo.
 
-REM Check if node_modules exists
+echo ========================================
+echo Checking Dependencies
+echo ========================================
+
 if not exist "node_modules" (
-    echo [INFO] node_modules not found. Installing dependencies...
+    echo [INFO] Installing dependencies...
     echo.
     call npm install
     if %ERRORLEVEL% NEQ 0 (
@@ -81,49 +91,45 @@ if not exist "node_modules" (
         pause
         exit /b 1
     )
-    echo.
-    echo [SUCCESS] Dependencies installed successfully
+    echo [SUCCESS] Dependencies installed
     echo.
 ) else (
-    echo [INFO] node_modules found. Checking for package updates...
-    echo.
-    
-    REM Check if package-lock.json is newer than node_modules (rough check)
-    REM If package.json was modified, we should reinstall
-    echo [INFO] Verifying dependencies are up to date...
+    echo [INFO] Verifying dependencies...
     call npm ci --prefer-offline >nul 2>&1
     if %ERRORLEVEL% NEQ 0 (
-        echo [INFO] Some dependencies may be missing or outdated. Installing...
+        echo [INFO] Updating dependencies...
         call npm install
         if %ERRORLEVEL% NEQ 0 (
-            echo [ERROR] Failed to install/update dependencies
+            echo [ERROR] Failed to update dependencies
             pause
             exit /b 1
         )
-        echo [SUCCESS] Dependencies updated successfully
-        echo.
+        echo [SUCCESS] Dependencies updated
     ) else (
-        echo [SUCCESS] All dependencies are up to date
-        echo.
+        echo [SUCCESS] Dependencies up to date
     )
+    echo.
 )
 
 echo ========================================
-echo Starting development server...
+echo Starting Development Server
 echo ========================================
 echo.
-echo The app will be available at http://localhost:5173
+echo Application: Coffee Roasting Grapher
+echo Version: 1.1.0
+echo URL: http://localhost:5173
+echo.
+echo [TIP] After opening in browser, press Ctrl+Shift+R for hard refresh
+echo [TIP] Or open DevTools (F12) and check "Disable cache"
+echo.
 echo Press Ctrl+C to stop the server
 echo.
 
-REM Launch the development server
 call npm run dev
 
-REM If the dev server exits, pause to see any error messages
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo [ERROR] Development server exited with an error
+    echo [ERROR] Development server exited with errors
     pause
     exit /b 1
 )
-
