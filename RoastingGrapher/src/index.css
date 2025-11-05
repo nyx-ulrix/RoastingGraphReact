@@ -1,69 +1,345 @@
+/* ============================================
+   CSS Variables for consistent theming
+   ============================================ */
 :root {
-  font-family: 'Times New Roman', Times, serif;
-  line-height: 1.5;
-  font-weight: 800;
+  /* Colors */
+  --color-bg-primary: #000000;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cccccc;
+  --color-button-bg: #ffffff;
+  --color-button-text: #000000;
+  --color-border: #ffffff;
+  
+  /* Typography */
+  --font-family: 'Times New Roman', Times, serif;
+  --font-weight-normal: 500;
+  --font-weight-bold: 800;
+  --font-size-base: 1em;
+  --font-size-large: 3.2em;
+  --line-height-base: 1.5;
+  --line-height-heading: 1.1;
+  
+  /* Spacing */
+  --spacing-xs: 5px;
+  --spacing-sm: 8px;
+  --spacing-md: 10px;
+  --spacing-lg: 20px;
+  --spacing-xl: 30px;
+  --padding-input: 8px;
+  --padding-button: 0.6em 1.2em;
+  --padding-button-large: 12px;
+  --padding-container: 20px;
+  
+  /* Layout */
+  --border-radius-sm: 5px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 10px;
+  --border-radius-round: 100px;
+  --border-width: 1px;
+  --border-width-thick: 2px;
+  
+  /* Transitions */
+  --transition-fast: 0.25s;
+  --transition-normal: 0.3s;
+  
+  /* Other */
+  --opacity-hover: 0.9;
+  --opacity-disabled: 0.5;
+}
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #000000;
+/* ============================================
+   Base Styles
+   ============================================ */
+* {
+  box-sizing: border-box;
+}
 
+:root {
+  font-family: var(--font-family);
+  line-height: var(--line-height-base);
+  font-weight: var(--font-weight-bold);
+  color-scheme: dark;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizeSpeed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
-  margin: auto;
+  margin: 0;
+  padding: 0;
   display: flex;
   text-align: center;
   min-width: 100vw;
   min-height: 100vh;
-} 
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+/* ============================================
+   Typography
+   ============================================ */
+h1, h2, h3, h4, h5, h6, p {
+  color: var(--color-text-primary);
+  margin: 0;
+}
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: var(--font-size-large);
+  line-height: var(--line-height-heading);
 }
 
+h2 {
+  margin: var(--spacing-md) 0;
+}
+
+/* ============================================
+   Links
+   ============================================ */
+a {
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-text-secondary);
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
+  border-radius: var(--border-radius-md);
+  border: var(--border-width) solid var(--color-button-text);
+  padding: var(--padding-button);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-button-bg);
+  color: var(--color-button-text);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: opacity var(--transition-fast);
 }
-button:hover {
-  border-color: #646cff;
+
+button:hover:not(:disabled) {
+  opacity: var(--opacity-hover);
 }
+
+button:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Button variants */
+.round-button {
+  aspect-ratio: 1/1;
+  border-radius: var(--border-radius-round);
+}
+
+/* ============================================
+   Form Elements
+   ============================================ */
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: var(--padding-input);
+  font-size: 16px;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: none;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--color-text-secondary);
+}
+
+input[type="text"]:disabled,
+input[type="number"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input[type="radio"] {
+  cursor: pointer;
+}
+
+label {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+/* ============================================
+   Layout Utilities
+   ============================================ */
+.full-width {
+  min-width: 90vw;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.center-elements {
+  text-align: center;
+}
+
+.flex-container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================
+   App Container
+   ============================================ */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* ============================================
+   Screen Layout
+   ============================================ */
+.screen-container {
+  padding: var(--padding-container);
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+}
+
+.screen-header {
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.screen-content {
+  margin-bottom: var(--spacing-xl);
+  text-align: center;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  width: 300px;
+  padding: var(--padding-container);
+  border: var(--border-width-thick) solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  background-color: var(--color-bg-primary);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.form-label-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  cursor: pointer;
+}
+
+.form-radio-group {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.button-large {
+  padding: var(--padding-button-large);
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+  min-width: 120px;
+}
+
+.graph-container {
+  background-color: var(--color-bg-primary);
+  padding: var(--padding-container);
+  border-radius: var(--border-radius-lg);
+  border: var(--border-width) solid var(--color-border);
+  margin-bottom: var(--spacing-xl);
+  height: 400px;
+}
+
+.timer-controls {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  margin: auto;
+  gap: var(--spacing-md);
+  width: 30%;
+}
+
+/* ============================================
+   Media Queries
+   ============================================ */
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    /* Maintain dark theme regardless of system preference */
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-primary);
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+  
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
   }
 }
 
+@media (max-width: 768px) {
+  .form-container {
+    width: 90%;
+    max-width: 300px;
+  }
+  
+  .timer-controls {
+    width: 80%;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .button-large {
+    width: 100%;
+    max-width: 200px;
+  }
+}

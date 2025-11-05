@@ -1,19 +1,2 @@
-.full-width {
-    min-width: 90vw;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .center-elements{
-    text-align: center;
-  }
-  .round-button{
-    aspect-ratio: 1/1;
-    border-radius: 100px;
-    
-  }
-  .redbg{
-    background-color: red;
-  }
-  .greenbg{
-    background-color: green;
-  }
+/* This file is kept for backward compatibility but styles have been moved to index.css */
+/* All styles are now consolidated in index.css for better organization */
