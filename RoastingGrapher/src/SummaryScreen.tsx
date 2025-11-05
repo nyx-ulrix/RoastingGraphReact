@@ -120,17 +120,17 @@ function SummaryScreen({ beanName, chargeTemp, unit, temperatureData, totalTime,
 
       <div className="screen-content">
         <h2>Roast Complete!</h2>
-        <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', margin: '10px 0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '10px 0' }}>
           <p><strong>Total Time:</strong> {formatTime(totalTime)}</p>
+          {firstCrackTime !== null && (
+            <p><strong>First Crack Time:</strong> {formatTime(firstCrackTime)}</p>
+          )}
           <p><strong>Charge Temp:</strong> {chargeTemp.toFixed(1)}°{unit}</p>
           <p><strong>Final Temp:</strong> {finalTemp.toFixed(1)}°{unit}</p>
+          {firstCrackTime !== null && (
+            <p><strong>DTR:</strong> {dtr.toFixed(1)}%</p>
+          )}
         </div>
-        {firstCrackTime !== null && (
-          <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', margin: '5px 0' }}>
-            <p><strong>First Crack:</strong> {formatTime(firstCrackTime)}</p>
-            <p><strong>Development Time Ratio:</strong> {dtr.toFixed(1)}%</p>
-          </div>
-        )}
       </div>
 
       <div className="center-elements">
